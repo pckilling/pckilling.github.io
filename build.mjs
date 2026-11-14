@@ -19,7 +19,7 @@ if (html === before) throw new Error('数据源替换失败：没找到 fetch(/a
 /** 2) 页脚说明改成快照口径 */
 html = html.replace(
   '<div class="foot">每 10 秒自动刷新 · <span id="stamp">—</span></div>',
-  '<div class="foot">数据由 GitHub Actions 定时采集，每 10 分钟更新一次 · <span id="stamp">—</span></div>'
+  '<div class="foot">数据由服务器定时采集，每 10 分钟更新一次 · <span id="stamp">—</span></div>'
 );
 
 /** 3) 静态文件不会 10 秒变一次，刷新降到 60 秒，减少无谓请求 */
@@ -50,7 +50,7 @@ fs.writeFileSync(OUT, html, 'utf8');
 // 校验
 const checks = [
   ["data/status.json", html.includes("fetch('data/status.json?t='")],
-  ['页脚快照说明', html.includes('GitHub Actions 定时采集')],
+  ['页脚快照说明', html.includes('服务器定时采集')],
   ['刷新 60s', html.includes('setInterval(tick, 60000)')],
   ['无残留 /api/status', !html.includes("'/api/status'")],
 ];
