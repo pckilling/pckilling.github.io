@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Amia bot · 服务状态</title>
+<style>
+  :root{
+    --bg:#14161b; --card:#1d2027; --card2:#23262f;
+    --line:#2c3038; --txt:#e8ebf0; --dim:#8f97a5; --dim2:#6b7280;
+    --ok:#4ade80; --warn:#fbbf24; --bad:#f87171; --info:#60a5fa; --acc:#a78bfa;
+    --okbg:rgba(74,222,128,.13); --warnbg:rgba(251,191,36,.13); --badbg:rgba(248,113,113,.13);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);
+    font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    padding:20px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1300px;margin:0 auto}
+
+  /* 头部 */
+  header{display:flex;align-items:center;gap:13px;flex-wrap:wrap;margin-bottom:20px}
+  .logo{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#a78bfa,#60a5fa);
+        display:grid;place-items:center;font-size:20px;font-weight:700;color:#fff;flex:none;box-shadow:0 4px 14px rgba(167,139,250,.25)}
+  h1{font-size:18px;font-weight:600;letter-spacing:.2px}
+  .sub{font-size:12px;color:var(--dim);margin-top:1px}
+  .spacer{flex:1}
+  .overall{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+           border-radius:999px;padding:8px 16px;font-size:13px;font-weight:500}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none;transition:background .3s}
+  .dot.ok{background:var(--ok);box-shadow:0 0 9px rgba(74,222,128,.65)}
+  .dot.bad{background:var(--bad);box-shadow:0 0 9px rgba(248,113,113,.65)}
+  .dot.warn{background:var(--warn);box-shadow:0 0 9px rgba(251,191,36,.6)}
+  .dot.off{background:#4b5563}
+  .pulse{animation:pl 2s ease-in-out infinite}
+  @keyframes pl{0%,100%{opacity:1}50%{opacity:.4}}
+
+  /* 网格 */
+  .grid{display:grid;gap:13px}
+  .g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  .g2{grid-template-columns:repeat(auto-fit,minmax(360px,1fr))}
+  .g3{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .mb{margin-bottom:13px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:16px 18px}
+  .card h2{font-size:12px;font-weight:600;color:var(--dim);letter-spacing:.5px;text-transform:uppercase;
+           margin-bottom:14px;display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .card h2 .l{display:flex;align-items:center;gap:7px}
+  .card h2 .cnt{color:var(--dim2);font-weight:400;text-transform:none;letter-spacing:0;font-size:11.5px}
+
+  /* 指标 */
+  .metric .label{font-size:12px;color:var(--dim);margin-bottom:8px}
+  .metric .big{font-size:25px;font-weight:600;letter-spacing:-.5px;line-height:1.2;font-variant-numeric:tabular-nums}
+  .metric .big small{font-size:13px;font-weight:500;color:var(--dim);margin-left:2px}
+  .metric .hint{font-size:11px;color:var(--dim2);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar{height:5px;border-radius:3px;background:#2b3038;margin-top:11px;overflow:hidden}
+  .bar>i{display:block;height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+  .bg-ok{background:linear-gradient(90deg,#34d399,#4ade80)}
+  .bg-warn{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+  .bg-bad{background:linear-gradient(90deg,#ef4444,#f87171)}
+  .bg-info{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+  .t-ok{color:var(--ok)} .t-warn{color:var(--warn)} .t-bad{color:var(--bad)} .t-info{color:var(--info)} .t-acc{color:var(--acc)}
+  .t-dim{color:var(--dim)}
+
+  /* 行 */
+  .row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #252932}
+  .row:last-child{border-bottom:none}
+  .row .nm{flex:1;min-width:0}
+  .row .nm b{font-weight:500;font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .nm span{font-size:11px;color:var(--dim2);font-variant-numeric:tabular-nums}
+  .pill{font-size:10.5px;padding:3px 8px;border-radius:5px;font-weight:600;white-space:nowrap;flex:none}
+  .pill.ok{background:var(--okbg);color:var(--ok)}
+  .pill.bad{background:var(--badbg);color:var(--bad)}
+  .pill.warn{background:var(--warnbg);color:var(--warn)}
+  .pill.off{background:rgba(139,147,161,.1);color:var(--dim)}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+
+  /* 图表 */
+  .chart{width:100%;height:120px;display:block}
+  .legend{display:flex;gap:15px;font-size:11px;color:var(--dim);margin-top:9px;flex-wrap:wrap}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+
+  /* 余额 */
+  .bal{display:flex;align-items:baseline;gap:8px}
+  .bal .amt{font-size:33px;font-weight:600;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+  .bal .cur{font-size:13px;color:var(--dim)}
+  .kv{display:flex;justify-content:space-between;padding:7px 0;font-size:12.5px;border-bottom:1px solid #252932}
+  .kv:last-child{border-bottom:none}
+  .kv span:first-child{color:var(--dim)}
+  .kv span:last-child{font-variant-numeric:tabular-nums}
+
+  /* 柱状图 */
+  .bars{display:flex;align-items:flex-end;gap:2px;height:44px;margin-top:10px}
+  .bars .b{flex:1;background:linear-gradient(180deg,#a78bfa,#6366f1);border-radius:2px 2px 0 0;min-height:1px;transition:height .4s}
+
+  /* 标签 */
+  .tags{display:flex;flex-wrap:wrap;gap:5px}
+  .tag{font-size:11px;padding:3px 8px;border-radius:5px;background:#2a2f38;color:#b9c1cd;white-space:nowrap}
+  .tag.bad{background:var(--badbg);color:var(--bad)}
+  .tag.dep{background:#252932;color:var(--dim2)}
+
+  .foot{text-align:center;color:var(--dim2);font-size:11.5px;margin-top:22px;padding-bottom:8px}
+  .byline{text-align:center;color:var(--dim2);font-size:10.5px;letter-spacing:.5px;
+          opacity:.6;padding-bottom:10px;margin-top:-2px}
+  .err{color:var(--bad);font-size:12.5px}
+  @media(max-width:600px){body{padding:12px}.metric .big{font-size:21px}.g2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">A</div>
+    <div>
+      <h1>Amia bot · 服务状态</h1>
+      <div class="sub" id="subtitle">正在载入…</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="overall"><span class="dot off pulse" id="allDot"></span><span id="allTxt">检查中</span></div>
+  </header>
+
+  <div class="grid g4 mb" id="metrics"></div>
+
+  <div class="grid g2 mb">
+    <div class="card">
+      <h2><span class="l">负载趋势</span><span class="cnt" id="trendHint"></span></h2>
+      <svg class="chart" id="chart" viewBox="0 0 600 120" preserveAspectRatio="none"></svg>
+      <div class="legend">
+        <span><i class="bg-info"></i>CPU</span>
+        <span><i class="bg-ok"></i>内存</span>
+        <span><i class="bg-warn"></i>Swap</span>
+      </div>
+    </div>
+    <div class="card">
+      <h2><span class="l">DeepSeek 余额</span><span class="cnt" id="balTime"></span></h2>
+      <div id="balance"></div>
+    </div>
+  </div>
+
+  <div class="grid g3 mb">
+    <div class="card">
+      <h2><span class="l">今日 Token</span><span class="cnt" id="tokHint"></span></h2>
+      <div id="tokens"></div>
+    </div>
+    <div class="card">
+      <h2><span class="l">进程</span><span class="cnt" id="procCnt"></span></h2>
+      <div id="procs"></div>
+    </div>
+    <div class="card">
+      <h2><span class="l">端口 / 服务</span><span class="cnt" id="portCnt"></span></h2>
+      <div id="ports"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="l">NoneBot 插件</span><span class="cnt" id="plugCnt"></span></h2>
+    <div id="plugins"></div>
+  </div>
+
+  <div class="foot">数据由 GitHub Actions 定时采集，每 10 分钟更新一次 · <span id="stamp">—</span></div>
+  <div class="byline">Amia bot by Noctelle</div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const fmtB = (b, p = 1) => {
+  if (b === null || b === undefined) return '—';
+  const u = ['B','KB','MB','GB','TB']; let i = 0, n = b;
+  while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+  return n.toFixed(i === 0 ? 0 : p) + ' ' + u[i];
+};
+const fmtDur = (s) => {
+  if (!s && s !== 0) return '—';
+  const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+  if (d) return `${d}天${h}时`;
+  if (h) return `${h}小时${m}分`;
+  return `${m}分`;
+};
+const lvl = (p, w = 85, b = 70) => p >= w ? 'bad' : p >= b ? 'warn' : 'ok';
+const lvlClass = { ok: 't-ok', warn: 't-warn', bad: 't-bad', info: 't-info' };
+const lvlBg = { ok: 'bg-ok', warn: 'bg-warn', bad: 'bg-bad', info: 'bg-info' };
+const nf = (n) => (n === null || n === undefined) ? '—' : n.toLocaleString('zh-CN');
+
+/* -------------------------------- 指标卡 -------------------------------- */
+function renderMetrics(d) {
+  const s = d.system;
+  const cards = [
+    { label: 'CPU',          val: s.cpu.toFixed(1),              unit: '%',
+      pct: s.cpu, hint: `负载 ${s.loadavg.map(x => x.toFixed(2)).join(' / ')} · ${s.cores} 核` },
+    { label: '内存',         val: fmtB(s.mem.used, 2),          unit: '',
+      pct: s.mem.pct, hint: `共 ${fmtB(s.mem.total, 2)} · 可用 ${fmtB(s.mem.avail, 2)}` },
+    { label: 'Swap',         val: fmtB(s.swap.used, 2),         unit: '',
+      pct: s.swap.pct, hint: s.swap.total ? `共 ${fmtB(s.swap.total, 2)} · ${s.swap.pct.toFixed(1)}%` : '未启用' },
+    { label: '磁盘 /',       val: fmtB(s.disk.used, 1),         unit: '',
+      pct: s.disk.pct, hint: `共 ${fmtB(s.disk.total, 1)} · 剩 ${fmtB(s.disk.avail, 1)}` },
+    { label: '运行时长',     val: fmtDur(s.uptime),             unit: '',
+      pct: null, hint: s.kernel },
+  ];
+  if (s.temp !== null && s.temp !== undefined) {
+    cards.push({ label: '温度', val: s.temp.toFixed(1), unit: '°C', pct: (s.temp / 100) * 100, hint: s.host });
+  } else {
+    cards.push({ label: '主机', val: s.host, unit: '', pct: null, hint: `${s.cpus} 核 · ${s.kernel}` });
+  }
+
+  $('#metrics').innerHTML = cards.map(c => {
+    const lv = c.pct === null ? 'info' : lvl(c.pct);
+    return `<div class="card metric">
+      <div class="label">${c.label}</div>
+      <div class="big ${lvlClass[lv]}">${c.val}${c.unit ? `<small>${c.unit}</small>` : ''}</div>
+      <div class="hint" title="${c.hint}">${c.hint}</div>
+      ${c.pct !== null ? `<div class="bar"><i class="${lvlBg[lv]}" style="width:${Math.min(100, c.pct).toFixed(1)}%"></i></div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+/* -------------------------------- 趋势图 -------------------------------- */
+function renderChart(samples) {
+  const svg = $('#chart'), W = 600, H = 120, PAD = 6;
+  if (!samples || samples.length < 2) {
+    svg.innerHTML = `<text x="300" y="62" text-anchor="middle" fill="#565e6b" font-size="12">正在收集数据…</text>`;
+    $('#trendHint').textContent = '';
+    return;
+  }
+  const n = samples.length;
+  const X = (i) => PAD + (W - PAD * 2) * i / (n - 1);
+  const Y = (v) => PAD + (H - PAD * 2) * (1 - Math.min(100, Math.max(0, v)) / 100);
+
+  let grid = '';
+  for (const v of [25, 50, 75]) {
+    grid += `<line x1="${PAD}" y1="${Y(v).toFixed(1)}" x2="${W - PAD}" y2="${Y(v).toFixed(1)}"
+             stroke="#2c3038" stroke-width=".7" stroke-dasharray="3 4"/>`;
+  }
+  const series = (key, color) => {
+    const pts = samples.map((s, i) => `${X(i).toFixed(1)},${Y(s[key]).toFixed(1)}`);
+    const line = pts.join(' ');
+    const area = `M${X(0).toFixed(1)},${(H - PAD).toFixed(1)} L` + pts.join(' L') + ` L${X(n - 1).toFixed(1)},${(H - PAD).toFixed(1)} Z`;
+    return `<path d="${area}" fill="${color}" opacity=".09"/>
+            <polyline points="${line}" fill="none" stroke="${color}" stroke-width="1.9"
+              stroke-linejoin="round" stroke-linecap="round"/>`;
+  };
+  svg.innerHTML = grid
+    + series('swap', '#fbbf24')
+    + series('mem', '#4ade80')
+    + series('cpu', '#60a5fa');
+  $('#trendHint').textContent = `${n} 个采样点`;
+}
+
+/* -------------------------------- 余额 -------------------------------- */
+function renderBalance(b) {
+  if (!b || !b.data) {
+    $('#balance').innerHTML = `<div class="err">读取失败：${(b && b.error) || '未知'}</div>`;
+    $('#balTime').textContent = '';
+    return;
+  }
+  const x = b.data;
+  const lv = x.total > 10 ? 'ok' : x.total > 2 ? 'warn' : 'bad';
+  $('#balance').innerHTML = `
+    <div class="bal">
+      <span class="amt ${lvlClass[lv]}">¥${x.total.toFixed(2)}</span>
+      <span class="cur">${x.currency}</span>
+    </div>
+    <div style="margin-top:13px">
+      <div class="kv"><span>充值余额</span><span>¥${x.topped.toFixed(2)}</span></div>
+      <div class="kv"><span>赠送余额</span><span>¥${x.granted.toFixed(2)}</span></div>
+      <div class="kv"><span>账户状态</span><span class="${x.available ? 't-ok' : 't-bad'}">${x.available ? '可用' : '不可用'}</span></div>
+    </div>`;
+  $('#balTime').textContent = new Date(b.at).toLocaleTimeString('zh-CN');
+}
+
+/* -------------------------------- Token -------------------------------- */
+function renderTokens(u) {
+  const el = $('#tokens');
+  if (!u) { el.innerHTML = '<div class="t-dim">无数据</div>'; return; }
+  const t = u.today || {}, a = u.all || {};
+  const chat = u.chat || {};
+
+  if (!u.hasData) {
+    el.innerHTML = `
+      <div class="t-dim" style="font-size:12.5px;margin-bottom:10px;line-height:1.7">
+        token 统计已在 <span class="mono">brain.js</span> 里埋点，等 Amia 下次调用模型就会写入
+        <span class="mono">data/usage.jsonl</span>，这里随即开始累积。
+      </div>
+      <div class="kv"><span>今日聊天消息</span><span>${nf(chat.today)}</span></div>
+      <div class="kv"><span>其中她自己说的</span><span>${nf(chat.selfToday)}</span></div>
+      <div class="kv"><span>流水总条数</span><span>${nf(chat.total)}</span></div>`;
+    $('#tokHint').textContent = '等待首次调用';
+    return;
+  }
+
+  const maxH = Math.max(...u.hourly, 1);
+  const bars = u.hourly.map((v, i) =>
+    `<div class="b" style="height:${Math.max(1, (v / maxH) * 100)}%"
+       title="${String(i).padStart(2, '0')}:00 · ${nf(v)} tokens"></div>`
+  ).join('');
+
+  el.innerHTML = `
+    <div class="bal"><span class="amt t-acc">${nf(t.total || 0)}</span><span class="cur">tokens 今日</span></div>
+    <div class="bars">${bars}</div>
+    <div style="margin-top:12px">
+      <div class="kv"><span>调用次数</span><span>${nf(t.calls)}</span></div>
+      <div class="kv"><span>输入 / 输出</span><span>${nf(t.prompt)} / ${nf(t.completion)}</span></div>
+      <div class="kv"><span>缓存命中</span><span>${nf(t.hit)}</span></div>
+      <div class="kv"><span>估算花费</span><span class="t-warn">¥${(t.cost || 0).toFixed(4)}</span></div>
+      <div class="kv"><span>累计（全部）</span><span>${nf(a.total)} tokens · ¥${(a.cost || 0).toFixed(3)}</span></div>
+    </div>`;
+  $('#tokHint').textContent = `${nf(t.calls)} 次调用`;
+}
+
+/* -------------------------------- 进程 -------------------------------- */
+function renderProcs(list) {
+  const up = list.filter(p => p.running).length;
+  $('#procCnt').textContent = `${up}/${list.length}`;
+  $('#procs').innerHTML = list.map(p => `
+    <div class="row">
+      <span class="dot ${p.running ? 'ok' : 'bad'}"></span>
+      <div class="nm"><b>${p.name}</b>
+        <span class="mono">${p.running ? `pid ${p.pid} · ${p.uptime} · ${fmtB(p.mem, 0)}` : '未运行'}</span></div>
+      <span class="pill ${p.running ? 'ok' : 'bad'}">${p.running ? '运行' : '停止'}</span>
+    </div>`).join('');
+}
+
+/* -------------------------------- 端口 -------------------------------- */
+function renderPorts(list) {
+  const core = list.filter(p => !p.optional);
+  const up = core.filter(p => p.up).length;
+  $('#portCnt').textContent = `${up}/${core.length}`;
+  $('#ports').innerHTML = list.map(p => {
+    const pillCls = p.up ? 'ok' : (p.optional ? 'off' : 'bad');
+    const txt = p.up ? '正常' : (p.optional ? '未开' : '不通');
+    return `<div class="row">
+      <span class="dot ${p.up ? 'ok' : 'off'}"></span>
+      <div class="nm"><b>${p.name}</b>
+        <span class="mono">:${p.port}${p.up && p.ms !== undefined ? ' · ' + p.ms + 'ms' : ''}${!p.up && p.optional ? ' · 按需开启' : ''}</span></div>
+      <span class="pill ${pillCls}">${txt}</span>
+    </div>`;
+  }).join('');
+}
+
+/* -------------------------------- 插件 -------------------------------- */
+function renderPlugins(p) {
+  if (!p) { $('#plugins').innerHTML = '<div class="t-dim">无数据</div>'; return; }
+  const { loaded = [], failed = [], declared = [], thirdParty = [], lastErrors = [], startedAt } = p;
+
+  $('#plugCnt').textContent = `${loaded.length} 已加载` + (failed.length ? ` · ${failed.length} 失败` : '') + (startedAt ? ` · 启动于 ${startedAt}` : '');
+
+  const main = loaded.filter(x => !thirdParty.includes(x));
+  const deps = loaded.filter(x => thirdParty.includes(x));
+
+  let html = '';
+  if (declared.length) {
+    html += `<div class="t-dim" style="font-size:11px;margin-bottom:7px">pyproject 声明 ${declared.length} 个</div>
+      <div class="tags" style="margin-bottom:14px">${declared.map(x => `<span class="tag">${x}</span>`).join('')}</div>`;
+  }
+  if (main.length) {
+    html += `<div class="t-dim" style="font-size:11px;margin-bottom:7px">主插件 ${main.length} 个</div>
+      <div class="tags" style="margin-bottom:14px">${main.map(x => `<span class="tag">${x}</span>`).join('')}</div>`;
+  }
+  if (deps.length) {
+    html += `<div class="t-dim" style="font-size:11px;margin-bottom:7px">依赖库 ${deps.length} 个</div>
+      <div class="tags" style="margin-bottom:14px">${deps.map(x => `<span class="tag dep">${x}</span>`).join('')}</div>`;
+  }
+  if (failed.length) {
+    html += `<div class="t-bad" style="font-size:11px;margin-bottom:7px">加载失败 ${failed.length} 个</div>
+      <div class="tags" style="margin-bottom:14px">${failed.map(x => `<span class="tag bad">${x}</span>`).join('')}</div>`;
+  }
+  if (lastErrors.length) {
+    html += `<div class="t-warn" style="font-size:11px;margin-bottom:7px">最近的运行错误</div>
+      <div style="font-size:11.5px;color:var(--dim);font-family:ui-monospace,monospace;line-height:1.7">
+        ${lastErrors.map(e => `<div>· ${e.replace(/</g, '&lt;')}</div>`).join('')}
+      </div>`;
+  }
+  if (!html) html = '<div class="t-dim">未能解析插件信息</div>';
+  $('#plugins').innerHTML = html;
+}
+
+/* -------------------------------- 汇总 -------------------------------- */
+function renderOverall(d) {
+  const critical = d.processes.filter(p => ['snowluma', 'nonebot', 'companion', 'haruki'].includes(p.id) && !p.running);
+  const corePorts = d.ports.filter(p => !p.optional && !p.up);
+  const s = d.system;
+  const diskPct = Number(s.disk.pct) || 0;
+
+  let lv = 'ok', txt = '全部正常';
+  if (critical.length) { lv = 'bad'; txt = critical.map(p => p.name).join('、') + ' 离线'; }
+  else if (corePorts.length) { lv = 'bad'; txt = corePorts.length + ' 个端口不通'; }
+  else if (diskPct > 88 || s.mem.pct > 93) { lv = 'warn'; txt = '资源告急'; }
+  else if (s.swap.pct > 80) { lv = 'warn'; txt = 'Swap 吃紧'; }
+  else if (d.balance && d.balance.data && d.balance.data.total < 1) { lv = 'warn'; txt = 'API 余额不足'; }
+
+  $('#allDot').className = 'dot ' + lv;
+  $('#allTxt').textContent = txt;
+  $('#subtitle').textContent = `${s.host} · ${s.kernel} · ${s.cores} 核 · 采样 ${new Date(d.at).toLocaleTimeString('zh-CN')}`;
+}
+
+/* -------------------------------- 主循环 -------------------------------- */
+async function tick() {
+  try {
+    const r = await fetch('data/status.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    renderOverall(d);
+    renderMetrics(d);
+    renderChart(d.history);
+    renderBalance(d.balance);
+    renderTokens(d.usage);
+    renderProcs(d.processes);
+    renderPorts(d.ports);
+    renderPlugins(d.plugins);
+    $('#stamp').textContent = '最后更新 ' + new Date(d.at).toLocaleTimeString('zh-CN');
+  } catch (e) {
+    $('#allDot').className = 'dot bad';
+    $('#allTxt').textContent = '暂无数据';
+    $('#stamp').textContent = '快照尚未生成（等 Actions 第一次跑完）';
+  }
+}
+tick();
+setInterval(tick, 60000);
+</script>
+</body>
+</html>

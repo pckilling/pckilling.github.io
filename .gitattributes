@@ -1,0 +1,7 @@
+# 统一换行符，避免 Windows 上提交 CRLF 导致 YAML/JS 在小问题里翻车
+* text=auto eol=lf
+*.yml  text eol=lf
+*.mjs  text eol=lf
+*.json text eol=lf
+*.html text eol=lf
+*.md   text eol=lf
